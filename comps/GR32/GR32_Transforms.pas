@@ -1690,8 +1690,6 @@ var
   i, j, jmax, unset, LowerI, UpperI, interpolated, mapToSameIndex, IndexOutOfRange: Integer;
   r_src, r_tgt, LowerValue, UpperValue: TFloat;
 begin
-  IndexOutOfRange := 0;
-  mapToSameIndex := 0;
   if MapElements <= 1 then
     MapElements := Trunc(r_0);
   r_tgt_max := 2;
@@ -1701,8 +1699,8 @@ begin
     Map[i] := -1;
 
   jmax := 1000;
-//  mapToSameIndex := 0;
-//  IndexOutOfRange := 0;
+  mapToSameIndex := 0;
+  IndexOutOfRange := 0;
   for j := 0 to jmax do
   begin
     r_src := j/jmax*2;
@@ -1775,7 +1773,7 @@ begin
   end;
 {$IFDEF DEBUG}
 {$IFDEF COMPILER2009_UP}
-//  OutputDebugString(PChar(Format('TRadialDistortionTransformation.PrepareReverseMap: MinValue(Map)=%f MaxValue(Map)=%f', [ MinValue(Map), MaxValue(Map) ])));
+  OutputDebugString(PChar(Format('TRadialDistortionTransformation.PrepareReverseMap: MinValue(Map)=%f MaxValue(Map)=%f', [ MinValue(Map), MaxValue(Map) ])));
 {$ENDIF}
 {$ENDIF}
 end;
