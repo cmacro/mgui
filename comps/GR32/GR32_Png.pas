@@ -64,7 +64,8 @@ type
     property Progress: TProgressEvent read FProgressEvent write FProgressEvent;
   end;
 
-function IsValidPNG(const Filename: string): Boolean; {$IFDEF USEINLINING} inline; {$ENDIF}
+function IsValidPNG(Stream: TStream): Boolean; overload; {$IFDEF USEINLINING} inline; {$ENDIF}
+function IsValidPNG(const Filename: string): Boolean; overload; {$IFDEF USEINLINING} inline; {$ENDIF}
 procedure LoadBitmap32FromPNG(Bitmap: TBitmap32; const Filename: string); overload; {$IFDEF USEINLINING} inline; {$ENDIF}
 procedure LoadBitmap32FromPNG(Bitmap: TBitmap32; Stream: TStream); overload; {$IFDEF USEINLINING} inline; {$ENDIF}
 procedure SaveBitmap32ToPNG(Bitmap: TBitmap32; FileName: string); overload; {$IFDEF USEINLINING} inline; {$ENDIF}
@@ -332,9 +333,8 @@ type
   private
     FItems: array of TColor32;
     FCount: Integer;
-
-  protected
     procedure Remove(Index: Integer);
+  protected
     function GetItem(index: Integer): TColor32;
     function Find(const item: TColor32; var index: Integer): Boolean;
     function Compare(const item1, item2: TColor32): Integer;
@@ -376,20 +376,14 @@ type
     property Count: Integer read FCount;
   end;
 
+function IsValidPNG(Stream: TStream): Boolean;
+begin
+  Result := TPortableNetworkGraphic32.CanLoad(Stream);
+end;
 
 function IsValidPNG(const Filename: string): Boolean;
 begin
-  try
-    with TPortableNetworkGraphic32.Create do
-    try
-      LoadFromFile(Filename);
-      Result := True;
-    finally
-      Free;
-    end;
-  except
-    Result := False;
-  end;
+  Result := TPortableNetworkGraphic32.CanLoad(Filename);
 end;
 
 
@@ -1449,25 +1443,25 @@ begin
 {$ELSE}
 asm
 {$IFDEF Target_x64}
-  LEA     RCX, RCX + 4 * R8
-  LEA     RDX, RDX + 4 * R8
+  LEA     RCX, [RCX + 4 * R8]
+  LEA     RDX, [RDX + 4 * R8]
   NEG     R8
   JNL     @Done
 
 @Start:
-  MOVZX   R10, [RCX + 4 * R8]
-  MOVZX   R10, [R9 + R10]
+  MOVZX   R10, [RCX + 4 * R8].BYTE
+  MOVZX   R10, [R9 + R10].BYTE
   MOV     [RDX + 4 * R8 + $02], R10B
 
-  MOVZX   R10, [RCX + 4 * R8 + $01]
-  MOVZX   R10, [R9 + R10]
+  MOVZX   R10, [RCX + 4 * R8 + $01].BYTE
+  MOVZX   R10, [R9 + R10].BYTE
   MOV     [RDX + 4 * R8 + $01], R10B
 
-  MOVZX   R10,[RCX + 4 * R8 + $02]
-  MOVZX   R10,[R9 + R10]
+  MOVZX   R10,[RCX + 4 * R8 + $02].BYTE
+  MOVZX   R10,[R9 + R10].BYTE
   MOV     [RDX + 4 * R8], R10B
 
-  MOVZX   R10, [RCX + 4 * R8 + $03]
+  MOVZX   R10, [RCX + 4 * R8 + $03].BYTE
   MOV     [RDX + 4 * R8 + $03], R10B
 
   ADD     R8, 1
@@ -2426,8 +2420,7 @@ end;
 procedure TPngPalette.GetNearest(var Value: TColor32);
 var
   Index, MinIndex: Integer;
-  Distance,
-  MinDistance: Integer;
+  Distance, MinDistance: Integer;
 begin
   if IndexOf(Value) < 0 then
   begin
@@ -2444,7 +2437,7 @@ begin
         Sqr(TColor32Entry(Value).B - TColor32Entry(FItems[Index]).B);
       if Distance < MinDistance then
       begin
-        //Distance := MinDistance;
+        MinDistance := Distance;
         MinIndex := Index;
       end;
     end;
@@ -2547,7 +2540,7 @@ end;
 
 function TPngHistogram.Add(Value: TColor32): Integer;
 begin
-  result := Add(TPngHistogramEntry.Create(Value));
+  Result := Add(TPngHistogramEntry.Create(Value));
 end;
 
 function TPngHistogram.Add(const anItem: TPngHistogramEntry): Integer;
