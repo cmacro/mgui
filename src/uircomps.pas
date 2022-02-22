@@ -5,7 +5,7 @@ unit uirComps;
 interface
 
 uses
-  Classes, SysUtils, LCLClasses, Controls, ExtCtrls;
+  Classes, SysUtils, LCLClasses, Controls, ExtCtrls, GR32, GR32_Backends;
 
 
 type
@@ -16,8 +16,18 @@ type
     constructor Create(TheOwner: TComponent); override;
   end;
 
-  TirControl = class(TirDataPanel)
+  { TirControl }
 
+  TirControl = class(TirDataPanel)
+  protected
+    FBuffer: TBitmap32;
+    FBufferValid: Boolean;
+
+    procedure Paint; override;
+    procedure PaintControl; virtual;
+    procedure Resize; override;
+  public
+    procedure Invalidate; override;
   end;
 
 
@@ -90,6 +100,45 @@ type
   end;
 
 implementation
+
+{ TirControl }
+
+procedure TirControl.Paint;
+begin
+  if not Assigned(Parent) then Exit;
+
+  if not FBufferValid then
+  begin
+     (FBuffer.Backend as IPaintSupport).ImageNeeded;
+      PaintControl;
+     (FBuffer.Backend as IPaintSupport).CheckPixmap;
+      FBufferValid := True;
+  end;
+
+  FBuffer.Lock;
+  try
+    (FBuffer.Backend as IDeviceContextSupport).DrawTo(Canvas.Handle, 0, 0);
+  finally
+    FBuffer.Unlock;
+  end;
+end;
+
+procedure TirControl.PaintControl;
+begin
+  // draw
+end;
+
+procedure TirControl.Invalidate;
+begin
+  FBufferValid := False;
+  inherited Invalidate;
+end;
+
+procedure TirControl.Resize;
+begin
+  FBufferValid := False;
+  inherited Resize;
+end;
 
 { TirSidebarItem }
 
